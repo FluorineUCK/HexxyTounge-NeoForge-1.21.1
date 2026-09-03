@@ -1,8 +1,0 @@
-{
-  "values": [
-    "hexic:moveentity",
-    "hexic:makeworld",
-    "hexic:attachworld",
-    "hexic:deleteworld"
-  ]
-}

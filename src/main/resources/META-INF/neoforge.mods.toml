@@ -1,0 +1,50 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "LGPL-3.0"
+
+[[mods]]
+modId = "hexxytounge"
+version = "${version}"
+displayName = "Tongued Hexxy"
+description = "NeoForge compatibility marker for the Radicle-declared Tongued Hexxy module. Upstream commit fc8007f fused the chat implementation into Hexic; install with Hexic 2.1.0+ for murmur/reveal/mediaweave behavior."
+authors = "pool"
+logoFile = "assets/hexxytounge/icon.png"
+
+[[dependencies.hexxytounge]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.hexxytounge]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.hexxytounge]]
+modId = "hexcasting"
+type = "required"
+versionRange = "[0.12.0-devel-pre-35,)"
+
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.hexxytounge]]
+modId = "hexic"
+type = "required"
+versionRange = "[2.1.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.hexxytounge]]
+modId = "phlib"
+type = "required"
+versionRange = "[0.1.3,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[mixins]]
+config = "hexxytongge.mixins.json"

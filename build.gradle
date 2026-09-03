@@ -1,0 +1,133 @@
+plugins {
+    id "architectury-plugin" version "3.4.164"
+    id "dev.architectury.loom" version "1.9-SNAPSHOT"
+    id "java"
+    id "maven-publish"
+}
+
+
+def findWorkspacePath = { List relativeCandidates ->
+    def cursor = projectDir
+    while (cursor != null) {
+        for (relative in relativeCandidates) {
+            def candidate = new File(cursor, relative.toString())
+            if (candidate.exists()) {
+                return candidate
+            }
+        }
+        cursor = cursor.parentFile
+    }
+    return null
+}
+def localMavenRepo = findWorkspacePath(['.maven-repo']) ?: new File(projectDir.parentFile, '.maven-repo')
+def localGradleHome = gradle.gradleUserHomeDir
+def yahaDir = findWorkspacePath(['01-yaha-source/yaha', 'yaha']) ?: new File(projectDir.parentFile, 'yaha')
+def workspaceFile = { List relativeCandidates -> findWorkspacePath(relativeCandidates) ?: new File(projectDir.parentFile, relativeCandidates[0].toString()) }
+def localGradleCacheFile = { String relativePath -> new File(localGradleHome, relativePath) }
+def yahaLib = { String fileName -> new File(new File(yahaDir, 'libs'), fileName) }
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+architectury {
+    minecraft = project.minecraft_version
+    platformSetupLoomIde()
+    neoForge {
+        platformPackage = "neoforge"
+    }
+}
+
+loom {
+    silentMojangMappingsLicense()
+    mods {
+        main {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+repositories {
+    maven { url localMavenRepo }
+    mavenCentral()
+    maven { url "https://maven.architectury.dev/" }
+    maven { url "https://maven.neoforged.net/releases/" }
+    maven { url "https://maven.blamejared.com/" }
+    maven { url "https://maven.shedaniel.me/" }
+    maven {
+        name = "Kotlin for Forge"
+        url = "https://thedarkcolour.github.io/KotlinForForge/"
+    }
+}
+
+configurations {
+    maybeCreate("neoForge")
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    neoForge "net.neoforged:neoforge:${project.neo_forge_version}"
+    compileOnly "net.neoforged:neoforge:${project.neo_forge_version}"
+    compileOnly files(localGradleCacheFile("caches/modules-2/files-2.1/net.neoforged.fancymodloader/loader/4.0.35/8aefd870e0dd65c88dce9ac92f763aed918bf97d/loader-4.0.35.jar"))
+    compileOnly files(localGradleCacheFile("caches/modules-2/files-2.1/net.neoforged/mergetool/2.0.3/1275202cbbb248f49345cf6787ce299afd9a02fb/mergetool-2.0.3-api.jar"))
+    compileOnly files(localGradleCacheFile("caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.15.2+mixin.0.8.7/2af2f021d8e02a0220dc27a7a72b4666d66d44ca/sponge-mixin-0.15.2+mixin.0.8.7.jar"))
+    modApi "dev.architectury:architectury-neoforge:${project.architectury_version}"
+
+    // Keep one Hex Casting class identity while Loom remaps the production
+    // Hexic runtime jar; mixing the plain API jar with the devruntime jar
+    // breaks IClientXplatAbstractions ServiceLoader subtype checks.
+    compileOnly files(yahaLib("hexcasting-neoforge-${project.minecraft_version}-${project.hexcasting_version}.jar"))
+    runtimeOnly files(yahaLib("hexcasting-neoforge-${project.minecraft_version}-${project.hexcasting_version}.jar"))
+
+    runtimeOnly files(yahaLib("paucal-${project.paucal_version}+${project.minecraft_version}-neoforge.jar"))
+    runtimeOnly files(yahaLib("inline-${project.minecraft_version}-${project.inline_version}-neoforge-devruntime.jar"))
+    runtimeOnly files(yahaLib("caelus-neoforge-${project.caelus_version}.jar"))
+    runtimeOnly files(workspaceFile(["hex-addons-hexic-neo-probe/libs/curios-neoforge-9.5.1+${project.minecraft_version}.jar", "02-tangled-source/hex-addons-hexic-neo-probe/libs/curios-neoforge-9.5.1+${project.minecraft_version}.jar"]))
+    runtimeOnly files(workspaceFile(["hex-addons-phlib-neo-probe/build/libs/phlib-0.1.3-neoforge-probe.jar", "02-tangled-source/hex-addons-phlib-neo-probe/build/libs/phlib-0.1.3-neoforge-probe.jar"]))
+    runtimeOnly files(workspaceFile(["hex-addons-iotaworks-neo-probe/build/libs/iotaworks-0.1.4-neoforge-probe.jar", "02-tangled-source/hex-addons-iotaworks-neo-probe/build/libs/iotaworks-0.1.4-neoforge-probe.jar"]))
+    modRuntimeOnly files(workspaceFile(["hex-addons-hexic-neo-probe/build/libs/hexic-2.1.0-neoforge-probe.jar", "02-tangled-source/hex-addons-hexic-neo-probe/build/libs/hexic-2.1.0-neoforge-probe.jar"]))
+    // File dependencies are not transitive. Keep the dev client complete enough
+    // to load IotaWorks and Hexic, whose runtime jars are used as the actual
+    // Tongued Hexxy implementation/parity host.
+    runtimeOnly files(workspaceFile(["18-hexcellular-neoforge-port/build/libs/hexcellular-1.1.1+1.21.1-neoforge-pre39.jar"]))
+    runtimeOnly files(workspaceFile(["19-moreiotas-neoforge-port/build/libs/moreiotas-0.1.1+1.21.1-neoforge-pre39.jar"]))
+    runtimeOnly files(workspaceFile(["11-hexal-neoforge-port/build/libs/hexal-0.3.1+1.21.1-neoforge.jar"]))
+    runtimeOnly files(workspaceFile(["11-hexal-neoforge-port/libs/geckolib-neoforge-1.21.1-4.9.2.jar"]))
+    runtimeOnly files(workspaceFile(["16-oneironaut-neoforge-port/build/libs/oneironaut-neoforge-0.5.0+1.21.1-neoforge-pre39.jar"]))
+    runtimeOnly "thedarkcolour:kotlinforforge-neoforge:${project.forge_kotlin_version}"
+    runtimeOnly "me.shedaniel.cloth:cloth-config-neoforge:${project.cloth_config_version}"
+    runtimeOnly files(workspaceFile(["11-hexal-neoforge-port/libs/Patchouli-${project.patchouli_version}.jar"]))
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    options.release = 21
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+
+tasks.named("sourcesJar", Jar) {
+    // Source reference jars are not runtime mod jars; keep loader and mixin metadata out
+    // so NeoForge will not treat *-sources.jar as a broken mod candidate in modpacks.
+    exclude "META-INF/neoforge.mods.toml"
+    exclude "META-INF/mods.toml"
+    exclude "fabric.mod.json"
+    exclude "*.mixins.json"
+    exclude "**/*.mixins.json"
+    exclude "*.mixin.json"
+    exclude "**/*.mixin.json"
+}
+
